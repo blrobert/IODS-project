@@ -2,5 +2,7 @@
 # About the project
 
 *Write a short description about the course and add a link to your github repository here. This is an R markdown (.Rmd) file so you can use R markdown syntax. See the 'Useful links' page in the mooc area (chapter 1) for instructions.*
+#Course Description
 This course teaches students to use the statistical programming software R to prepare and analyze data. 
+#Course Diary
 <https://github.com/blrobert/IODS-project>

@@ -2,5 +2,5 @@
 # About the project
 This course teaches students to use the statistical programming software R to prepare and analyze data. 
 
-## Github Repository
+### Github Repository
 <https://github.com/blrobert/IODS-project>

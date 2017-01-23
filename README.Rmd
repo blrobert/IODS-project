@@ -1,4 +1,4 @@
-#Course Description
+# Course Description
 This course teaches students to use the statistical programming software R to prepare and analyze data. 
-##Course Diary
+## Course Diary
 https://blrobert.github.io/IODS-project/

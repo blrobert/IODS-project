@@ -38,7 +38,7 @@ dim(lrn14)
 str(lrn14)
 ###
 #saving the dataset to the working directory (data folder)
-setwd("~/Documents/IODS-project/Data")
+setwd("~/Documents/IODS-project")
 ?write.csv
 write.csv(lrn14,file="learning2014.csv")
 lrn14<-read.csv("learning2014.csv", row.names = 1)

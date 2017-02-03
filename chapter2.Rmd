@@ -5,3 +5,54 @@
 - Describe your work and results clearly. 
 - Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods
 - Assume the reader has no previous knowledge of your data or the more advanced methods you are using  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+lrn14<-read.csv("learning2014.csv",row.names=1)
+str(lrn14)
+dim(lrn14)
+```
+This dataset includes 166 rows and 7 columns (variables). The variables are Age, Gender, (exam) Points, Attitude, Surface Learning, Strategic Learning and Deep Learning.
+
+install.packages("GGally")
+install.packages("ggplot2")
+
+```{r}
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+pairs(lrn14[-1],col=lrn14$gender)
+ggpairs(lrn14, mapping=aes(col=gender, alpha=0.3), lower=list(combo=wrap("facethist",bins=20)))
+summary(lrn14)
+```
+Most of the variables have relatively normal distributions, with the exception of age, which has a right-skewed distribution. The male attitude distribution could also be considered left-skewed. Most of the variables have weak relationships with each other, as exhibited by correlations less than 0.1. Notably, points and attitude have a strong positive relationship with a correlation value of 0.437. Deep learning and surface learning have a fairly strong negative correlation at -0.324, meaning that as deep learning increases, the tendency toward surface learning decreases. Surprisingly, median deep learning is higher than median surface learning, although there is higher variation with regard to deep learning. 
+```{r}
+my_model<-lm(Points~attitude+deep+surf, data=lrn14)
+summary(my_model)
+```
+The only tested explanatory variable that exhibits a statistically significant relationship with the target variable points is attitude, as indicated by a p-value less than 0.05. For every 1 point increase in a student's measured attitude, there is a 6.011 point increase in points scored on the exam. There is no significant relationship different from 0 between the explanatory variables deep learning and surface learning and the target variable points (exam score).
+
+Ordinary least squares regression determines the Betas, or best fit lines, that minimize the differences between the fitted value and the observed value for each of the explanatory variables. The provided t-values represent the slopes of the linear best fit lines for each explanatory variable, and thus the relationship betewen the explanatory variable and the target variable. The p-value determines whether that is relationship is statistically significant, or due to chance. 
+
+```{r}
+my_model2<-lm(Points~attitude,data=lrn14)
+```
+
+```{r}
+summary(my_model2)
+```
+Removing the explanatory variables surface learning and deep learning, which did not exhibit a statistically significant relationship with the target variable points, attitude remains statistically significant and exhibits a slightly larger relationship with/effect on points. The intercept also increases in value from 3.895 to 6.358. The median residual increases from the prior model, while the multiple r-squared value falls from 0.2024 to 0.1906, meaning that the second model has less explanatory power than the first. 
+
+R-squared is a measure of how close the true observations are to the fitted line, and thus a determination of how well the model explains the variation of observations around the data's mean. It tells you how much of the variance in the target variable can be explained by the explanatory variables. R-squared values range from 0 to 1, with 0 indicating that the model explains none of the variation, and 1 indicating that the explanatory variables used explain all of the variation in the target variable. My model has an R-squared of 0.2024, meaning that it has relatively low explanatory power and there are substantial differences between the fitted lines for each explanatory variable and the actual observations. 
+
+```{r}
+plot(my_model2, which=c(1:2,5))
+```
+
+The assumptions of the linear regression model are that the errors are normally distributed, the errors are not correlated and the errors have constant varaiance (and, as such, the size of an error does not depend on the explanatory variables). For my model, the normality assumption is reasonable, because the points are for the most part tightly fitted to the line in the Q-Q Plot and there are no extreme outliers. The constant variance assumption is also reasonable, because there is a random spread of points with no clear pattern in the graph comparing residuals and model predictions. The Residuals vs. Leverage plot indicates that the data has regular leverage, because there is no significant outlier (the leverage values range from 0 to 0.04) that has a disproportionate effect on the model. 
+

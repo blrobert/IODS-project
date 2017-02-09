@@ -1,0 +1,75 @@
+---
+title: "chapter3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+alc<-read.csv("alc.csv",row.names=1)
+```
+
+```{r}
+colnames(alc)
+dim(alc)
+```
+
+The data inclues 382 rows (students) and 35 variables/columns. Each variable indicates attributes and grade information about students in either math or Portuguese language courses. 
+
+I will test Pstatus, studytime, failures and higher in relation to high/low alcohol consumption. 
+For those students with Pstatus apart (false), there will be a higher probability of high alcohol consumption. For those students with higher weekly study times, there will be a lower probability of high aclohol consumption. For those students with a higher number of failures, there will be a higher probability of high alcohol consumption. For those students who want to pursue higher education, there will be a lower probablility of high aclohol consumption.
+
+install.packages("GGally")
+install.packages("ggplot2")
+
+```{r}
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+bar<-ggplot(data=alc, aes(x=high_use))
+bar+facet_wrap("Pstatus")+geom_bar()
+bar+facet_wrap("studytime")+geom_bar()
+bar+facet_wrap("failures")+geom_bar()
+bar+facet_wrap("higher")+geom_bar()
+```
+
+```{r}
+table(high_use=alc$high_use, Pstatus=alc$Pstatus)
+table(high_use=alc$high_use, studytime=alc$studytime)
+table(high_use=alc$high_use, failures=alc$failures)
+table(high_use=alc$high_use, higher=alc$higher)
+```
+
+Based on the bar graphs and cross-tabulations, my hypotheses generally seem to be appropriate. For students whose parents live together, a higher proportion have low alcohol consumption compared with students whose parents are separated. Generally, the more students study the more likely they are to have low alcohol consumption. For students who plan to pursue higher education, a higher proportion have low alcohol consumption compared to students who don't plan to pursue higher education. In terms of failures, however, there is a less clear relationship with alcohol consumption. 
+
+model<-glm(high_use~Pstatus+studytime+failures+higher, data=alc, family="binomial")
+summary(model)
+The only stastically significant predictor of high aclohol consumption at the p<0.05 level is study time. For every one unit increase in study time, there is a 0.52540 decresase in the probability of high alcohol consumption. 
+OR<-coef(model)%>%exp
+CI<-exp(confint(model))
+cbind(OR,CI)
+Pstatus is associated with almost 1:1 odds of high alcohol consumption, but the odds of success are slightly lower for students whose parents are together, meaning that PstatusT is negatively associated with success(high aclohol consumption). Study time is associated with approximately 1:2 odds, indicating that those students who study more have lower odds of exhibiting high alcohol consumption. Failures is associated with approximately 3:2 odds, meaning the odds of success are higher for those students with more failures and thus failure is positively associated with high alcohol consumption. Higher education exhibits 3:4 odds, indicating that the desire to puruse higher education is negatively associated with high alchol consumption.
+Since none of the Confidence Intervals contain 1.0, all of the explanatory variables exhibit statistically significant associations with the target variable (high alcohol consumption) at the 0.05 level. 
+
+model2<-glm(high_use~studytime, data=alc, family="binomial")
+probabilities<-predict(model2, type="response")
+alc<-mutate(alc, probability=probabilities)
+alc<-mutate(alc, prediction=probability>0.5)
+table(high_use=alc$high_use, prediction=alc$prediction)
+
+library(ggplot2)
+g<-ggplot(alc, aes(x=probability, y=high_use, col=prediction))
+g+geom_point()
+
+loss_func<-function(class,prob){
+  n_wrong<-abs(class-prob)>0.5
+  mean(n_wrong)
+}
+
+loss_func(class=alc$high_use, prob=alc$probability)
+
+

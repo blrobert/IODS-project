@@ -1,5 +1,6 @@
 #Benjamin Roberts
 #07/02/2017
+#Introduction to logistic regression and cross validation. 
 #reading data into R
 math<-read.table("student-mat.csv",sep=";",header=TRUE)
 por<-read.csv("student-por.csv",sep=";",header=TRUE)

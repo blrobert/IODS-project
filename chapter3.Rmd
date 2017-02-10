@@ -2,13 +2,11 @@
 title: "chapter3"
 output: html_document
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+#Logistic Regression
+Introduction to logistic regression and cross validation
 
 ```{r}
-alc<-read.csv("alc.csv",row.names=1)
+alc <- read.csv("alc.csv",row.names=1)
 ```
 
 ```{r}
@@ -46,30 +44,65 @@ table(high_use=alc$high_use, higher=alc$higher)
 
 Based on the bar graphs and cross-tabulations, my hypotheses generally seem to be appropriate. For students whose parents live together, a higher proportion have low alcohol consumption compared with students whose parents are separated. Generally, the more students study the more likely they are to have low alcohol consumption. For students who plan to pursue higher education, a higher proportion have low alcohol consumption compared to students who don't plan to pursue higher education. In terms of failures, however, there is a less clear relationship with alcohol consumption. 
 
+```{r}
 model<-glm(high_use~Pstatus+studytime+failures+higher, data=alc, family="binomial")
 summary(model)
-The only stastically significant predictor of high aclohol consumption at the p<0.05 level is study time. For every one unit increase in study time, there is a 0.52540 decresase in the probability of high alcohol consumption. 
+coef(model)
+```
+
+The only stastically significant predictor of high aclohol consumption at the 0 level is study time. For every one unit increase in study time, there is a 0.52540 decresase in a student's log odds of exhibiting high alcohol consumption. 
+
+install.packages("tidyr")
+```{r}
+library(tidyr)
 OR<-coef(model)%>%exp
 CI<-exp(confint(model))
 cbind(OR,CI)
-Pstatus is associated with almost 1:1 odds of high alcohol consumption, but the odds of success are slightly lower for students whose parents are together, meaning that PstatusT is negatively associated with success(high aclohol consumption). Study time is associated with approximately 1:2 odds, indicating that those students who study more have lower odds of exhibiting high alcohol consumption. Failures is associated with approximately 3:2 odds, meaning the odds of success are higher for those students with more failures and thus failure is positively associated with high alcohol consumption. Higher education exhibits 3:4 odds, indicating that the desire to puruse higher education is negatively associated with high alchol consumption.
-Since none of the Confidence Intervals contain 1.0, all of the explanatory variables exhibit statistically significant associations with the target variable (high alcohol consumption) at the 0.05 level. 
+```
 
+Pstatus is associated with almost 1:1 odds of high alcohol consumption, but the odds of success are slightly lower for students whose parents are together, meaning that PstatusT is negatively associated with success(high aclohol consumption). Study time is associated with approximately 3:5 odds, indicating that those students who study more have lower odds of exhibiting high alcohol consumption. Failures is associated with approximately 3:2 odds, meaning the odds of success are higher for those students with more failures and thus failure is positively associated with high alcohol consumption. Higher education exhibits 3:4 odds, indicating that the desire to puruse higher education is negatively associated with high alchol consumption.
+Since none of the Confidence Intervals contain 1.0, all of the explanatory variables exhibit statistically significant associations with the target variable (high alcohol consumption) at the p<0.05 level. 
+
+Overall, the relationships posited in my hypothesis were correct, but only study time exhibited a statistically significant relationship with alcohol consumption in the regression model. 
+
+```{r}
 model2<-glm(high_use~studytime, data=alc, family="binomial")
+summary(model2)
+```
+
+```{r}
+library(dplyr)
 probabilities<-predict(model2, type="response")
 alc<-mutate(alc, probability=probabilities)
 alc<-mutate(alc, prediction=probability>0.5)
 table(high_use=alc$high_use, prediction=alc$prediction)
+select(alc, studytime, high_use, probability, prediction) %>% head(20)
+```
+Interestingly, using the model with only study time as an explanatory variable, there are no predicted probabilities above .5 and thus no predictions of true (high alcohol consumption). 
 
+```{r}
 library(ggplot2)
 g<-ggplot(alc, aes(x=probability, y=high_use, col=prediction))
 g+geom_point()
+```
 
+```{r}
 loss_func<-function(class,prob){
   n_wrong<-abs(class-prob)>0.5
   mean(n_wrong)
 }
 
 loss_func(class=alc$high_use, prob=alc$probability)
+```
 
+The training error is approximately .3, meaning that 30 percent of students are inaccurately classified in terms of their alcohol consumption (high/low). Simply guessing without a strategy gives you a 50 percent chance of being correct in a binary situation such as this, and guessing with some intuition/strategy most likely gives you an even higher chance of being correct. Thus, the performance of the model is perceivably not that much different from a simple guessing strategy.
 
+install.packages("boot")
+```{r}
+library(boot)
+cv<-cv.glm(data=alc, cost=loss_func, glmfit=model, K=10)
+cv$delta[1]
+cv<-cv.glm(data=alc, cost=loss_func, glmfit=model2, K=10)
+cv$delta[1]
+```
+Both models have higher average prediction error than the DataCamp model. To find such a model, you could test different amounts and types of explanatory variables together. 

@@ -1,0 +1,131 @@
+---
+title: "chapter4"
+output: html_document
+---
+#Clustering and Classification
+
+```{r}
+library(MASS)
+data("Boston")
+str(Boston)
+dim(Boston)
+```
+
+The dataset Boston has 506 rows and 14 columns/variables. The variables are characterised by factors that influence housing values in the suburbs of Boston.
+
+install.packages("corrplot")
+
+```{r}
+library(tidyr)
+library(corrplot)
+pairs(Boston)
+cor_matrix<-cor(Boston)%>%round
+cor_matrix
+corrplot(cor_matrix, method="circle",type="upper", cl.pos="b", tl.pos="d", tl.cex = 0.6 )
+```
+
+According to the correlation plot, there appear to be strong relationships between a number of the variables in the dataset. For example, there is a strong, positive relationship between per capita crime rates and property tax rates. There is a strong, negative relationship between property tax rates and average distances to five Boston employment centers. Both of these relationships seem counterintuitive.
+
+```{r}
+boston_scaled<-scale(Boston)
+summary(boston_scaled)
+summary(Boston)
+```
+
+The numbers in the dataset were scaled down overall, as was the range. 
+
+```{r}
+boston_scaled<-as.data.frame(boston_scaled)
+scaled_crim<-boston_scaled$crim
+quants<-quantile(scaled_crim)
+summary(quants)
+string<-c("low", "med_low", "med_high", "high")
+crime<-cut(scaled_crim, breaks=quants, include.lowest=TRUE, label=string)
+summary(crime)
+boston_scaled<-dplyr::select(boston_scaled, -crim)
+boston_scaled<-data.frame(boston_scaled, crime)
+```
+
+```{r}
+n<-nrow(boston_scaled)
+samp<-sample(n, size=n*0.8)
+train<-boston_scaled[samp,]
+test<-boston_scaled[-samp,]
+```
+
+```{r}
+lda.fit<-lda(crime~.,data=train)
+lda.fit
+lda.arrows<-function(x, myscale=1, arrow_heads=0.1, color="red", tex=0.75, choices=c(1,2)){
+  heads<-coef(x)
+  arrows(x0=0, y0=0,
+    x1=myscale*heads[,choices[1]],
+    y1=myscale*heads[,choices[2]],
+col=color, length=arrow_heads)
+text(myscale*heads[,choices],labels=row.names(heads),
+      cex=tex,col=color, pos=3)
+}
+classes<-as.numeric(train$crime)
+plot(lda.fit, dimen=2, col=classes, pch=classes)
+lda.arrows(lda.fit, myscale=1)
+```
+
+Low, med_low and med_high training data are all intermixed and spacially tight, while the high training data are mostly clustered together, separate from other categories and spacially distant (with the exception of a few med_high data intermixed and one high entry mixed into the other cluster). It appears as though the high predictions will be the most accurate (most likely because the training data are the most spacially distant from the others), followed by the low predictions. The med_low and med_high predictions seem as though they will be relatively inaccurate, and the categories could most likely be slimmed to two or three classifications/clusters.
+
+```{r}
+correct_classes<-test$crime
+test<-dplyr::select(test,-crime)
+lda.pred<-predict(lda.fit, newdata=test)
+table(correct=correct_classes, predicted=lda.pred$class)
+```
+
+The LDA model was much more accurate at predicting the med_high and high results-it correctly predicted every high result. Low results were predicted correctly just over 50 percent of the time, although the incorrect predictions were all med_low. Med_low results were predicted under 50 percent of the time, and predictions ranged form low to med_high, though med_low was predicted the most. 
+
+```{r}
+library(MASS)
+data("Boston")
+boston_scaled<-scale(Boston)
+dist_eu<-dist(boston_scaled)
+summary(dist_eu)
+km<-kmeans(dist_eu, centers=15)
+pairs(Boston, col=km$cluster)
+```
+
+```{r}
+k_max<-15
+twcss<-sapply(1:k_max, function(k){kmeans(dist_eu,k)$tot.withinss})
+plot(1:k_max, twcss, type='b')
+km2<-kmeans(dist_eu, centers=2)
+pairs(Boston, col=km2$cluster)
+```
+
+Average number of rooms per dwelling (rm), nitrogen oxide concentration (nox) and proportion of owner-occupied units built prior to 1940 (age) seem to affect the clustering results. 
+
+```{r}
+library(MASS)
+data("Boston")
+boston_scaled<-scale(Boston)
+dist_eu<-dist(boston_scaled)
+km3<-kmeans(dist_eu, centers=4)
+```
+
+```{r}
+boston_scaled<-as.data.frame(boston_scaled)
+lda.fit2<-lda(km3$cluster~.,data=boston_scaled)
+lda.fit2
+lda.arrows<-function(x, myscale=1, arrow_heads=0.1, color="red", tex=0.75, choices=c(1,2)){
+  heads<-coef(x)
+  arrows(x0=0, y0=0,
+    x1=myscale*heads[,choices[1]],
+    y1=myscale*heads[,choices[2]],
+col=color, length=arrow_heads)
+text(myscale*heads[,choices],labels=row.names(heads),
+      cex=tex,col=color, pos=3)
+}
+classes=as.numeric(km3$cluster)
+plot(lda.fit2, dimen=2, col=classes, pch=classes)
+lda.arrows(lda.fit2, myscale=3)
+```
+
+Property tax rates (tax), proportion of residential land zoned (zn) and nitrogen oxides concentration (nox) are the most influential lienar separators for the clusters. These variables mostly influence the fourth cluster. 
+

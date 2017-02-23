@@ -17,3 +17,27 @@ join_by<-c("Country")
 human<-inner_join(hd, gii, by=join_by)
 dim(human)
 str(human)
+
+
+
+library(tidyr)
+library(stringr)
+GNIstring<-str_replace(human$GNI_pc, pattern=",", replace="")%>%as.numeric
+human<-mutate(human, GNI=GNIstring)
+
+keep_columns<-c("Country", "edu_ratio", "labor_ratio", "edu_exp", "life_exp", "GNI", "MMR","ABR", "fem_rep")
+human<-select(human, one_of(keep_columns))
+human<-filter(human, complete.cases(human)==TRUE)
+tail(human, n=10)
+last<-nrow(human)-7
+human<-human[1:last,]
+rownames(human)<-human$Country
+human<-select(human, -Country)
+dim(human)
+str(human)
+human
+
+setwd("~/Documents/IODS-project")
+write.csv(human, file="create_human.csv")
+human<-read.csv("create_human.csv",row.names=1)
+

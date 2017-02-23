@@ -1,0 +1,83 @@
+#Dimensionality Reduction Techniques
+
+```{r}
+human<-human<-read.csv("create_human.csv",row.names=1)
+str(human)
+dim(human)
+```
+
+Human is a dataset with 155 rows/countries and 8 columns/variables. The variables are key measures in the Human Development and Gender Inequality Indices. edu_ratio (mutated from data in the Gender Inequality Index) describes the ratio of female and male populations with secondary education in each country. labor_ratio (mutated from the GII data) describes ratio of labor force participation of females and males in each country. edu_exp (from the Human Development Index) describes the expected years of schooling of the general population. life_exp (from the HDI) describes the life expectancy of the general population. GNI (HDI) describes the Gross National Income per capita of a country in 2014. MMR (GII) describes the maternal mortality ratio (deaths per 100,000 live births), and ABR (GII) describes the adolescent birth rate (births per 1,000 women ages 15-19). fem_rep (GII) describes the percentage of seats in parliament held by women.
+
+install.packages("tidyr")
+install.packages("ggplot2")
+install.packages("GGally")
+install.packages("corrplot")
+```{r}
+library(tidyr)
+library(ggplot2)
+library(GGally)
+library(corrplot)
+ggpairs(human)
+cor(human)%>%corrplot
+```
+
+Life expectancy and adolescent birth rate have a relatively strong negative correlation, meaning that as the adolescent birth rate increases, life expectancy decreases, and vice versa. Expected education and education ratio have a relatively strong positive correlation, indicating that the ratio of female to male populations with secondary education increases and thus female educational inequality decreases as expected education increases, and vice versa. GNI, MMR and ABR all have right-skewed distriubtions, while labor_ratio, edu_exp and fem_rep has relatively normal distributions. Edu_ratio and life_exp have left-skewed distributions.
+
+```{r}
+summary(human)
+pca_human<-prcomp(human)
+s<-summary(pca_human)
+pca_pr<-round(100*s$importance[2,],digits=1)
+pc_lab<-paste0(names(pca_pr),"(",pca_pr,"%)")
+biplot(pca_human, cex=c(0.8,1), col=c("grey40","deeppink2"), xlab=pc_lab[1],ylab=pc_lab[2])
+```
+
+In the nonstandardized PCA, there appears to be no clear correlation between the original features themselves and the features and the principal components. The only exception is GNI, which exhibits a strong correlation with the first principal component. Interestingly, the first principal component explains 100 percent of the variation in the data, possibly because GNI explains all the variation. Most of the countries appear to be clustered in the middle, with little variation, explaining why the original features seem to have little relation to the principal component and each other and why PC1 explains all of the variability in the data. 
+
+```{r}
+human_std<-scale(human)
+summary(human_std)
+pca_human_std<-prcomp(human_std)
+
+s2<-summary(pca_human_std)
+pca_pr2<-round(100*s2$importance[2,],digits=1)
+pc_lab2<-paste0(names(pca_pr2),"(",pca_pr2,"%)")
+biplot(pca_human_std, cex=c(0.8,1), col=c("grey40","deeppink2"), xlab=pc_lab2[1],ylab=pc_lab2[2])
+
+summary(pca_human_std)
+```
+
+In the standardized PCA, the correlations are more evident and the countries are more spread out with greater variation. Scaling the data down allows for greater visualization of variability in the data. 
+
+Female representation in parliament and the ratio of labor force participation betewen females and males are relatively correlated with each other and with principal component 2 (fem_rep has the stronger correlation with PC2), indicating that PC2 most likely explains the variation in the country data relating to gender inequality. However, PC2 only captures 14 percent of the variability in the data.The rest of the variables are strongly correlated with principal component one and with each other, although in different directions. Maternal Mortality Ratio and Adolescent Birth Rate are strongly correlated with each other and PC1. Gross National Income per capita, the ratio of female and male populations with secondary education in each country, expected years of education, and life expectancy are strongly correlated with each other and PC1, but in the opposite direction of MMR and ABR. It is likely that these variables explain the human (or economic) development variability between the countries expressed in the data. High ABR and MMR contribute negatively to human development while higher GNI, education expectations, life expectancies and levels of female secondary educations point to more economically developed countries. Labor_ratio seems to be equally correlated with PC1 and PC2, which makes sense because higher female participation in the labor force indicates both lower gender inequality and higher levels of economic development. PC1 explains 58.2 percent of the variability in the data.
+
+Overall, PC1 and PC2 indicate the influence of different types of original features on the overall data. However, PC1 has significantly more explanatory power and is highly correlated with more original features. The features in PC1 are more related to human/economic development, and thus Principal Component One describes the variation in the data based on human/economic development. PC2 is more related to variation between countries in terms of gender inequality, and has less ability to capture the variation in the data based on the reality that more of the original features are related to the HDI. Even variables from the GII have a relationship with PC1, because development is related to gender equality. 
+
+install.packages("FactoMineR")
+install.packages("dplyr")
+```{r}
+library(FactoMineR)
+data("tea")
+str(tea)
+dim(tea)
+
+library(dplyr)
+keep_columns<-c("Tea", "How", "how", "sugar", "where", "lunch")
+tea_time<-dplyr::select(tea, one_of(keep_columns))
+str(tea_time)
+gather(tea_time)%>%ggplot(aes(value))+geom_bar()+facet_wrap("key", scales="free")+theme(axis.text.x=element_text(angle=45,hjust=1,size=8))
+```
+
+```{r}
+mca<-MCA(tea_time, graph=FALSE)
+summary(mca)
+plot(mca, invisible=c("ind"), habillage="quali")
+
+summary(tea$where)
+summary(tea$how)
+```
+
+According to the MCA summary, how and where contribute substantially to dim 1 and moreso than the other variables to dimension 2. 
+
+Dim 1 explains 15 percent of the variance in the data, while Dim 2 explains 14 percent. Many of the categories are similar, with the exception of other, chain store+tea shop, tea bag+unpackaged, green, unpackaged and tea shop. Most of these categories are from the variables how and where, indicating their influence on the first two dimensions and on the variation in the data as a whole.
+
